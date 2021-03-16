@@ -29,8 +29,7 @@ JSON_FILE = 'config.json'
 
 def iothub_client_init():
     # Create an IoT Hub client
-    client = IoTHubDeviceClient.create_from_connection_string(
-        CONNECTION_STRING)
+    client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
     return client
 
 
@@ -38,12 +37,7 @@ def device_method_listener(device_client):
     global INTERVAL
     while True:
         method_request = device_client.receive_method_request()
-        print(
-            "\nMethod callback called with:\nmethodName = {method_name}\npayload = {payload}".format(
-                method_name=method_request.name,
-                payload=method_request.payload
-            )
-        )
+        print("\nMethod callback called with:\nmethodName = {method_name}\npayload = {payload}".format(method_name=method_request.name, payload=method_request.payload))
         if method_request.name == "SetTelemetryInterval":
             try:
                 INTERVAL = int(method_request.payload)
@@ -51,34 +45,28 @@ def device_method_listener(device_client):
                 response_payload = {"Response": "Invalid parameter"}
                 response_status = 400
             else:
-                response_payload = {
-                    "Response": "Executed direct method {}".format(method_request.name)}
+                response_payload = {"Response": "Executed direct method {}".format(method_request.name)}
                 response_status = 200
         elif method_request.name == "UploadFile":
             try:
                 filename = method_request.payload
-                response_status, response_payload = asyncio.run(
-                    upload_blob(device_client, filename))
+                response_status, response_payload = asyncio.run(upload_blob(device_client, filename))
             except ValueError:
-                response_payload = {
-                    "Response": "Invalid filename passed as body"}
+                response_payload = {"Response": "Invalid filename passed as body"}
         elif method_request.name == "ChangeParameter":
             try:
                 # parameter = json.loads(method_request.payload)
                 parameter = method_request.payload
-                response_status, response_payload = asyncio.run(
-                    change_parameter(device_client, parameter))
+                response_status, response_payload = asyncio.run(change_parameter(device_client, parameter))
             except ValueError:
                 response_status = 400
-                response_payload = {
-                    "Response": "Invalid parameter passed as body"}
+                response_payload = {"Response": "Invalid parameter passed as body"}
         else:
             response_payload = {
                 "Response": "Direct method {} not defined".format(method_request.name)}
             response_status = 404
 
-        method_response = MethodResponse(
-            method_request.request_id, response_status, payload=response_payload)
+        method_response = MethodResponse(method_request.request_id, response_status, payload=response_payload)
         device_client.send_method_response(method_response)
 
 
@@ -87,8 +75,7 @@ async def main():
         print("IoT Hub device sending periodic messages, press Ctrl-C to exit")
 
         # Start a thread to listen
-        device_method_thread = threading.Thread(
-            target=device_method_listener, args=(client,))
+        device_method_thread = threading.Thread(target=device_method_listener, args=(client,))
         device_method_thread.daemon = True
         device_method_thread.start()
 
@@ -96,8 +83,7 @@ async def main():
             # Build the message with simulated telemetry values.
             temperature = TEMPERATURE + (random.random() * 15)
             humidity = HUMIDITY + (random.random() * 20)
-            msg_txt_formatted = MSG_TXT.format(
-                temperature=temperature, humidity=humidity)
+            msg_txt_formatted = MSG_TXT.format(temperature=temperature, humidity=humidity)
             message = Message(msg_txt_formatted)
 
             # Add a custom application property to the message.
@@ -143,8 +129,7 @@ async def store_blob(blob_info, file_name):
             blob_info["sasToken"]
         )
 
-        print("\nUploading file: {} to Azure Storage as blob: {} in container {}\n".format(
-            file_name, blob_info["blobName"], blob_info["containerName"]))
+        print("\nUploading file: {} to Azure Storage as blob: {} in container {}\n".format(file_name, blob_info["blobName"], blob_info["containerName"]))
 
         # Upload the specified file
         with BlobClient.from_blob_url(sas_url) as blob_client:
@@ -173,7 +158,7 @@ async def change_parameter(device_client, parameter):
         filecontent[key] = parameter[key]
 
     with open(JSON_FILE, 'w') as outfile:
-      json.dump(filecontent, outfile)
+        json.dump(filecontent, outfile)
     outfile.close()
 
     response = {"Response": "OK"}
