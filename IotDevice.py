@@ -9,14 +9,20 @@ import json
 
 # Using the Python Device SDK for IoT Hub:
 #   https://github.com/Azure/azure-iot-sdk-python
-from azure.iot.device import IoTHubDeviceClient, Message, MethodResponse
+from azure.iot.device import ProvisioningDeviceClient, IoTHubDeviceClient, Message, MethodResponse
 from azure.core.exceptions import AzureError
 from azure.storage.blob import BlobClient
 
 # The device connection string to authenticate the device with your IoT hub.
 # Using the Azure CLI:
 # az iot hub device-identity show-connection-string --hub-name {YourIoTHubName} --device-id MyNodeDevice --output table
-CONNECTION_STRING = "{Your IoT hub device connection string}"
+# Connect directly to IoT Hub
+CONNECTION_STRING = ""
+# Connect vie DPS
+DPS_ID_SCOPE = ""
+DPS_REGISTRATION_ID = ""
+DPS_REGISTRATION_KEY = ""
+DPS_GLOBAL_SERVICE_ENDPOINT = "global.azure-devices-provisioning.net"
 
 # Define the JSON message to send to IoT Hub.
 TEMPERATURE = 21.0
@@ -31,6 +37,12 @@ def iothub_client_init():
     # Create an IoT Hub client
     client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
     return client
+
+
+def provisioning_client_init():
+    client = ProvisioningDeviceClient.create_from_symmetric_key(DPS_GLOBAL_SERVICE_ENDPOINT, DPS_REGISTRATION_ID, DPS_ID_SCOPE, DPS_REGISTRATION_KEY)
+    registrationResult = client.register()
+    return 'HostName=' + registrationResult.registration_state.assigned_hub + ';DeviceId=' + DPS_REGISTRATION_ID + ';SharedAccessKey=' + DPS_REGISTRATION_KEY
 
 
 def device_method_listener(device_client):
@@ -168,5 +180,10 @@ if __name__ == '__main__':
     print("IoT Hub Quickstart - Simulated device with method listener and file upload")
     print("Press Ctrl-C to exit")
 
+    # use DPS to get the IoT Hub ConnectionString
+    if CONNECTION_STRING == '':
+        CONNECTION_STRING = provisioning_client_init()
+
     client = iothub_client_init()
+
     asyncio.run(main())
