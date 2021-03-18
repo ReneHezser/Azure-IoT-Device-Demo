@@ -1,3 +1,0 @@
-azure-iot-device
-azure-core
-azure.storage.blob
